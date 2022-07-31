@@ -1,0 +1,67 @@
+kind: pipeline
+type: docker
+name: default
+
+trigger:
+  branch:
+  - sg1
+
+steps:
+- name: build
+  image: %%{GolangDevImage}:1-alpine
+  pull: always
+  settings:
+    build_script: build.sh
+    platforms:
+    - linux/amd64
+  when:
+    event:
+    - push
+    - tag
+
+- name: scan
+  image: %%{NcicdDockerRepoPrivateCR}/cicd/nancy:latest
+  pull: always
+  #settings:
+  #  log_level: debug
+  #  save_log: true
+  depends_on:
+  - build
+  when:
+    event:
+    - push
+    - tag
+
+- name: release
+  image: %%{DroneGithubReleaseImage}
+  settings:
+    files: vault-plugin-secrets-github*.zip
+    checksum: sha256
+  depends_on:
+  - scan
+  when:
+    event:
+    - tag
+
+- name: notify-push
+  image: %%{DroneEmailImage}
+  depends_on:
+  - scan
+  when:
+    event:
+    - push
+    status:
+    - failure
+    - success
+
+- name: notify-tag
+  image: %%{DroneEmailImage}
+  depends_on:
+  - release
+  when:
+    event:
+    - tag
+    status:
+    - failure
+    - success
+
