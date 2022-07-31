@@ -157,6 +157,7 @@ func (b *backend) Client(s logical.Storage) (*Client, func(), error) {
 	b.clientLock.Unlock()
 	b.Logger().Debug("created GitHub App installation client",
 		"base_url", config.BaseURL,
+		"proxy_url", config.ProxyURL,
 		"app_id", strconv.Itoa(config.AppID),
 	)
 	b.clientLock.RLock()

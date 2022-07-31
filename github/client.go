@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -59,12 +60,27 @@ func NewClient(config *Config) (c *Client, err error) {
 		return nil, errClientConfigNil
 	}
 
+	var tr http.RoundTripper = &http.Transport{
+		Proxy: func (_ *http.Request) (*url.URL, error) {
+			return url.Parse(config.ProxyURL)
+		},
+		DialContext: (&net.Dialer{
+			Timeout:	30 * time.Second,
+			KeepAlive:	30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:		true,
+		MaxIdleConns:			100,
+		IdleConnTimeout:		90 * time.Second,
+		TLSHandshakeTimeout:	10 * time.Second,
+		ExpectContinueTimeout:	1 * time.Second,
+	}
+
 	c = &Client{
-		revocationTransport: http.DefaultTransport,
+		revocationTransport: tr,
 	}
 
 	if c.transport, err = ghinstallation.NewAppsTransport(
-		http.DefaultTransport,
+		tr,
 		int64(config.AppID),
 		[]byte(config.PrvKey),
 	); err != nil {

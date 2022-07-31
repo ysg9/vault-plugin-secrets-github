@@ -1,6 +1,7 @@
 package github
 
 import (
+	"os"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -16,6 +17,7 @@ const githubPublicAPI = "https://api.github.com"
 const (
 	fmtErrUnableToParsePrvKey  = "unable to parse private key"
 	fmtErrUnableToParseBaseURL = "unable to parse base URL"
+	fmtErrUnableToParseProxyURL = "unable to parse proxy URL"
 )
 
 var (
@@ -35,11 +37,15 @@ type Config struct {
 	// BaseURL is the base URL for API requests.
 	// Defaults to GitHub's public API.
 	BaseURL string `json:"base_url"`
+
+	// ProxyURL is the proxy for this backend.
+	ProxyURL string `json:"proxy_url"`
 }
 
 // NewConfig returns a pre-configured Config struct.
 func NewConfig() *Config {
-	return &Config{BaseURL: githubPublicAPI}
+	githubProxy := os.Getenv("GITHUB_PROXY")
+	return &Config{BaseURL: githubPublicAPI, ProxyURL: githubProxy}
 }
 
 // Update updates the configuration from the given field data only when the data
@@ -52,6 +58,18 @@ func (c *Config) Update(d *framework.FieldData) (bool, error) {
 
 	// Track changes to the configuration.
 	var changed bool
+
+	if proxyURL, ok := d.GetOk(keyProxyURL); ok {
+		nv, err := url.ParseRequestURI(proxyURL.(string))
+		if err != nil {
+			return false, fmt.Errorf("%s: %w", fmtErrUnableToParseProxyURL, err)
+		}
+
+		if c.ProxyURL != nv.String() {
+			c.ProxyURL = nv.String()
+			changed = true
+		}
+	}
 
 	if baseURL, ok := d.GetOk(keyBaseURL); ok {
 		nv, err := url.ParseRequestURI(baseURL.(string))

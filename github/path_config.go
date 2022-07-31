@@ -25,6 +25,8 @@ const (
 	descPrvKey  = "Private key for signing GitHub access token requests (JWTs)."
 	keyBaseURL  = "base_url"
 	descBaseURL = "Base URL for API requests (defaults to the public GitHub API)."
+	keyProxyURL  = "proxy_url"
+	descProxyURL = "Proxy URL for requests (defaults to end var GITHUB_PROXY)."
 )
 
 const pathConfigHelpSyn = `
@@ -54,6 +56,10 @@ func (b *backend) pathConfig() *framework.Path {
 			keyBaseURL: {
 				Type:        framework.TypeString,
 				Description: descBaseURL,
+			},
+			keyProxyURL: {
+				Type:        framework.TypeString,
+				Description: descProxyURL,
 			},
 		},
 		Operations: map[logical.Operation]framework.OperationHandler{
@@ -89,6 +95,7 @@ func (b *backend) pathConfigRead(
 	resData := map[string]interface{}{
 		keyAppID:   c.AppID,
 		keyBaseURL: c.BaseURL,
+		keyProxyURL: c.ProxyURL,
 	}
 
 	// We don't return the key but indicate its presence for a better UX.
