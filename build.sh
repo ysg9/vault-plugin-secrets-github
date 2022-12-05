@@ -34,7 +34,7 @@ for p in "${PLATFORM[@]}"; do
   mv ${CURDIRNAME}-${GOOS}-${GOARCH} ${WORKDIR}/${EXE}
   sha256sum ${WORKDIR}/${EXE} |cut -d' ' -f1 > ${WORKDIR}/${EXE}.sha256
   if [[ ${DRONE:-} != "" ]]; then
-    zip -j ${WORKDIR}/${BIN}.zip ${WORKDIR}/${EXE}
+    zip -j ${WORKDIR}/${BIN}.zip ${WORKDIR}/${EXE} ${WORKDIR}/${EXE}.sha256
   fi
 done
 echo "build complete"
